@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SWARM COMMANDER</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Polices digitales & rétro arcade Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ── 1. HUD OSD Supérieur (Style Viseur Appareil Photo Années 2000) ────── -->
+  <header id="cyber-header">
+    <div class="brand-section">
+      <div class="brand-rec-dot"></div>
+      <div class="brand-text">
+        <div class="brand-title">SWARM <span>COMMANDER</span></div>
+        <div class="brand-subtitle">SWARM SURVIVAL OSD</div>
+      </div>
+    </div>
+
+    <!-- Télémétrie des Factions & Objectifs en Direct -->
+    <div class="faction-hud">
+      <div class="hud-pill pill-player">
+        <span class="dot-indicator dot-player"></span>
+        <span class="hud-label">SANTÉ :</span>
+        <span class="hud-val" id="hud-player-status">100 / 100 PV</span>
+      </div>
+
+      <div class="hud-pill pill-level">
+        <span class="dot-indicator dot-swarm"></span>
+        <span class="hud-label">NIVEAU :</span>
+        <span class="hud-val" id="hud-level-val">01 / 05</span>
+      </div>
+
+      <div class="hud-pill pill-hunters">
+        <span class="dot-indicator dot-hunter"></span>
+        <span class="hud-label">CIBLES :</span>
+        <span class="hud-val" id="hud-enemies-count">12 ENNEMIS</span>
+      </div>
+
+      <div class="hud-pill pill-evol">
+        <span class="dot-indicator dot-evol"></span>
+        <span class="hud-label">SCORE :</span>
+        <span class="hud-val" id="hud-score-val">000000 / 002500</span>
+      </div>
+
+      <div class="hud-pill pill-swarm-order">
+        <span class="dot-indicator dot-swarm" id="dot-swarm-mode"></span>
+        <span class="hud-label">ORDRE :</span>
+        <span class="hud-val" id="hud-swarm-mode">[F] FORMATION</span>
+      </div>
+    </div>
+
+    <!-- Contrôle Son & Pause / Continuer dans le HUD -->
+    <div class="hud-pause-container">
+      <button id="btn-audio-header" class="hud-pause-btn state-running" title="Couper ou Activer le son procédural [M]">
+        <span class="pause-btn-icon" id="audio-icon">🔊</span>
+        <span class="pause-btn-text" id="audio-text">SON</span>
+      </button>
+      <button id="btn-pause-header" class="hud-pause-btn state-running" title="Mettre en pause ou Continuer la simulation [P] / [Échap]">
+        <span class="pause-btn-icon">❚❚</span>
+        <span class="pause-btn-text">PAUSE</span>
+      </button>
+    </div>
+
+    <!-- Télémétrie Système (FPS, Durée & Batterie) -->
+    <div class="telemetry-badge">
+      <div class="tele-item">FPS: <span class="val" id="tele-fps">60</span></div>
+      <div class="tele-item">TIME: <span class="val" id="tele-time">00:00</span></div>
+      <div class="battery-icon" title="Batterie Li-ion 3.7V">
+        <div class="battery-bar"></div>
+        <div class="battery-bar"></div>
+        <div class="battery-bar"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── 2. Canvas Container Plein Écran p5.js ──────────────────────────────── -->
+  <div id="canvas-container"></div>
+
+  <!-- ── 3. Panneau Latéral de Contrôle (Dashboard Data Science / Cyber) ──── -->
+  <aside id="cyber-sidebar">
+    <div class="sidebar-toggle" id="sidebar-toggle" title="Masquer / Afficher les contrôles">◀</div>
+
+    <div class="sidebar-header">
+      <div class="sidebar-title">SWARM COMMANDER MATRIX</div>
+      <div class="sidebar-subtitle">Gestionnaire de vagues & Forces Steering</div>
+    </div>
+
+    <div class="sidebar-scroll">
+
+      <!-- Bloc Principal de Pause / Continuer dans le Sidebar -->
+      <div class="control-section pause-section">
+        <button id="btn-pause-sidebar" class="sidebar-pause-btn state-running" title="Touche [P] ou [Échap]">
+          <span class="sidebar-pause-icon">❚❚</span>
+          <span class="sidebar-pause-label">PAUSE</span>
+          <span class="sidebar-pause-sub">[P] / [ÉCHAP]</span>
+        </button>
+      </div>
+
+      <!-- Sélecteur Rapide de Niveau (Accès direct pour évaluation) -->
+      <div class="control-section level-group">
+        <div class="section-label">
+          <span>Sélecteur de Protocole</span>
+          <span class="tag tag-amber">Vagues 1 à 5</span>
+        </div>
+        <div class="quick-levels">
+          <button class="level-btn active" id="btn-lvl-1" onclick="demarrerNiveau(1)">NIV 1 · Wander+Seek</button>
+          <button class="level-btn" id="btn-lvl-2" onclick="demarrerNiveau(2)">NIV 2 · Pursue+Evade</button>
+          <button class="level-btn" id="btn-lvl-3" onclick="demarrerNiveau(3)">NIV 3 · Path+Avoid</button>
+          <button class="level-btn" id="btn-lvl-4" onclick="demarrerNiveau(4)">NIV 4 · 30 Boids Flock</button>
+          <button class="level-btn" id="btn-lvl-5" onclick="demarrerNiveau(5)">NIV 5 · ADN Évolution</button>
+        </div>
+      </div>
+
+      <!-- Ordres Essaim Allié (Suivi de Leader / Attaque) -->
+      <div class="control-section swarm-orders-group">
+        <div class="section-label">
+          <span>Ordres Essaim Allié (20 Drones)</span>
+          <span class="tag tag-cyan" id="badge-swarm-mode">FORMATION</span>
+        </div>
+        <div class="swarm-order-buttons">
+          <button class="order-btn active" id="btn-swarm-formation" onclick="basculerModeEssaim('FORMATION')">
+            🛡️ [F] FORMATION (LEADER)
+          </button>
+          <button class="order-btn" id="btn-swarm-attack" onclick="basculerModeEssaim('ATTACK')">
+            ⚔️ [A] ATTAQUE (PURSUE)
+          </button>
+        </div>
+      </div>
+
+      <!-- Action d'Urgence : Onde EMP (Flee) -->
+      <div class="control-section emp-group">
+        <div class="section-label">
+          <span>Onde de Choc EMP [ESPACE]</span>
+          <span class="tag tag-cyan">Force Flee</span>
+        </div>
+        <button class="emp-trigger-btn" id="btn-trigger-emp">
+          💥 DÉCLENCHER ONDE EMP (FLEE)
+        </button>
+      </div>
+
+      <!-- 1. Joueur (Focus Leader) -->
+      <div class="control-section player-group">
+        <div class="section-label">
+          <span>Joueur (Focus AF)</span>
+          <span class="tag tag-cyan">Arrive</span>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-name">Vitesse Max Joueur</span>
+            <span class="slider-val" id="val-player-speed">6.5</span>
+          </div>
+          <input type="range" id="slider-player-speed" min="2.0" max="12.0" step="0.5" value="6.5" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-name">Force d'Accélération</span>
+            <span class="slider-val" id="val-player-force">0.32</span>
+          </div>
+          <input type="range" id="slider-player-force" min="0.05" max="0.80" step="0.05" value="0.32" />
+        </div>
+      </div>
+
+      <!-- 2. Pondérations Ennemis (Wander, Seek, Pursue) -->
+      <div class="control-section hunter-group">
+        <div class="section-label">
+          <span>Forces Ennemis</span>
+          <span class="tag tag-red">Traque</span>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-name">Poids Seek / Pursue</span>
+            <span class="slider-val" id="val-hunter-pursue">1.8</span>
+          </div>
+          <input type="range" id="slider-hunter-pursue" min="0.5" max="5.0" step="0.1" value="1.8" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-name">Poids Wander (Errance)</span>
+            <span class="slider-val" id="val-hunter-wander">1.0</span>
+          </div>
+          <input type="range" id="slider-hunter-wander" min="0.1" max="3.0" step="0.1" value="1.0" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-name">Vitesse Ennemis</span>
+            <span class="slider-val" id="val-hunter-speed">3.5</span>
+          </div>
+          <input type="range" id="slider-hunter-speed" min="1.5" max="7.0" step="0.2" value="3.5" />
+        </div>
+      </div>
+
+      <!-- 3. Flocking (Niveau 4) -->
+      <div class="control-section swarm-group">
+        <div class="section-label">
+          <span>Flocking Boids (Niv 4)</span>
+          <span class="tag tag-green">30 Agents</span>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-name">Séparation (1/d²)</span>
+            <span class="slider-val" id="val-swarm-sep">2.2</span>
+          </div>
+          <input type="range" id="slider-swarm-sep" min="0.5" max="6.0" step="0.1" value="2.2" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-name">Alignement</span>
+            <span class="slider-val" id="val-swarm-align">1.2</span>
+          </div>
+          <input type="range" id="slider-swarm-align" min="0.1" max="4.0" step="0.1" value="1.2" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-name">Cohésion</span>
+            <span class="slider-val" id="val-swarm-cohesion">1.0</span>
+          </div>
+          <input type="range" id="slider-swarm-cohesion" min="0.1" max="3.5" step="0.1" value="1.0" />
+        </div>
+      </div>
+
+      <!-- 4. Évitement d'Obstacles (Niv 3+) -->
+      <div class="control-section avoid-group">
+        <div class="section-label">
+          <span>Évitement d'Obstacles</span>
+          <span class="tag tag-amber">Ahead Radar</span>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-name">Poids Évitement Radar</span>
+            <span class="slider-val" id="val-avoid-weight">3.8</span>
+          </div>
+          <input type="range" id="slider-avoid-weight" min="1.0" max="8.0" step="0.2" value="3.8" />
+        </div>
+      </div>
+
+      <!-- Actions de Largage en Direct -->
+      <div class="quick-spawns">
+        <button class="spawn-btn btn-spawn-enemy" id="btn-spawn-enemy">+ ENNEMI</button>
+        <button class="spawn-btn btn-spawn-decoy" id="btn-spawn-decoy">+ LEURRE</button>
+        <button class="spawn-btn btn-spawn-obs" id="btn-spawn-obs">+ OBSTACLE</button>
+      </div>
+
+    </div>
+
+    <!-- Actions Pied de Page -->
+    <div class="sidebar-footer">
+      <button class="cyber-btn" id="btn-debug">
+        <span>[D]</span> Radars & ADN
+      </button>
+      <button class="cyber-btn" id="btn-reset">
+        <span>[R]</span> Recommencer
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── 4. Guide des Raccourcis Rapides en Bas d'Écran ────────────────────── -->
+  <footer id="cyber-footer-hint">
+    <div class="hint-item"><kbd>CLIC GAUCHE</kbd> Tirer Missile (Pursue)</div>
+    <div class="hint-item"><kbd>CLIC DROIT</kbd> Poser Leurre (Evade) / Obstacle</div>
+    <div class="hint-item"><kbd>[F]</kbd> Essaim Formation</div>
+    <div class="hint-item"><kbd>[A]</kbd> Essaim Attaque</div>
+    <div class="hint-item"><kbd>ESPACE</kbd> Onde EMP (Force Flee)</div>
+    <div class="hint-item"><kbd>[M]</kbd> Son On/Off</div>
+    <div class="hint-item"><kbd>[P] / [ÉCHAP]</kbd> Pause / Continuer</div>
+    <div class="hint-item"><kbd>[D]</kbd> Mode Debug</div>
+    <div class="hint-item"><kbd>[R]</kbd> Reset Partie</div>
+  </footer>
+
+  <!-- ── 5. Scripts du Moteur de Jeu & Bibliothèque Steering ──────────────── -->
+  <!-- 1. Bibliothèque p5.js avec Fallback Double-CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <script>
+    if (typeof p5 === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"><\/script>');
+    }
+  </script>
+
+  <!-- 2. Gestionnaire de Comportements Autonomes & Algorithmes Static -->
+  <script src="src/BehaviorManager.js"></script>
+
+  <!-- 3. Entités d'Environnement (Chemins & Obstacles) -->
+  <script src="src/Obstacle.js"></script>
+  <script src="src/Path.js"></script>
+
+  <!-- 4. Entités Véhicules, Missiles, Leurres et Effets Rétro -->
+  <script src="src/Vehicle.js"></script>
+
+  <!-- 5. Jeu de Survie 'Swarm Commander' & Moteur Audio Procédural Web Audio -->
+  <script src="src/sketch.js"></script>
+
+</body>
+</html>

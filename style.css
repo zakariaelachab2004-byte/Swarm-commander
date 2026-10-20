@@ -1,0 +1,730 @@
+/* ========================================================
+ * style.css — Interface Rétro-Numérique Appareil Photo LCD 2000s
+ * Projet Final Steering — Environnement Indépendant
+ * ======================================================== */
+
+/* ── 1. Reset & Variables Thème ──────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --lcd-bg: #0b100e;
+  --lcd-green: #39ff14;
+  --lcd-cyan: #00f0ff;
+  --lcd-red: #ff3366;
+  --lcd-amber: #ffb703;
+  --lcd-pink: #ff007f;
+  --lcd-yellow: #ffe600;
+  --lcd-white: #e0f2fe;
+  --lcd-dim: rgba(180, 220, 200, 0.45);
+  
+  --panel-bg: rgba(11, 20, 16, 0.88);
+  --panel-border: rgba(57, 255, 20, 0.25);
+  --font-mono: 'Share Tech Mono', 'Courier New', monospace;
+  --font-lcd: 'VT323', 'Share Tech Mono', monospace;
+  --font-arcade: 'Press Start 2P', monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--lcd-bg);
+  font-family: var(--font-mono);
+  color: var(--lcd-white);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── 2. Canvas Container Plein Écran ──────────────────────── */
+#canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+#canvas-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── 3. HUD Supérieur (OSD Caméra Rétro) ───────────────────── */
+#cyber-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(180deg, rgba(8, 14, 11, 0.92) 0%, rgba(8, 14, 11, 0.4) 75%, transparent 100%);
+  border-bottom: 1px solid rgba(57, 255, 20, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 10;
+  pointer-events: none; /* Laisse passer les clics vers le canvas */
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-rec-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--lcd-red);
+  box-shadow: 0 0 10px var(--lcd-red);
+  animation: recBlink 1s infinite alternate ease-in-out;
+}
+
+@keyframes recBlink {
+  0% { opacity: 0.2; transform: scale(0.85); }
+  100% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 14px var(--lcd-red); }
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #fff;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+}
+
+.brand-title span {
+  color: var(--lcd-green);
+}
+
+.brand-subtitle {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--lcd-dim);
+}
+
+/* Factions Status Badges */
+.faction-hud {
+  display: flex;
+  gap: 14px;
+}
+
+.hud-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 28, 22, 0.65);
+  border: 1px solid rgba(180, 220, 200, 0.2);
+  border-radius: 4px;
+  padding: 3px 9px;
+  font-size: 11px;
+  backdrop-filter: blur(4px);
+}
+
+.dot-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.dot-player { background: var(--lcd-green); box-shadow: 0 0 6px var(--lcd-green); }
+.dot-swarm  { background: var(--lcd-cyan);  box-shadow: 0 0 6px var(--lcd-cyan); }
+.dot-hunter { background: var(--lcd-red);   box-shadow: 0 0 6px var(--lcd-red); }
+.dot-evol   { background: var(--lcd-amber); box-shadow: 0 0 6px var(--lcd-amber); }
+
+.hud-label {
+  color: var(--lcd-dim);
+  font-size: 10px;
+}
+
+.hud-val {
+  color: #fff;
+  font-weight: bold;
+}
+
+/* ── Boutons Son & Pause / Continuer HUD Supérieur ── */
+.hud-pause-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto; /* Permet les clics même avec pointer-events: none sur le header */
+}
+
+.hud-pause-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-family: var(--font-arcade);
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+/* État : Simulation en cours (bouton Pause) */
+.hud-pause-btn.state-running {
+  background: rgba(15, 35, 25, 0.85);
+  border: 1.5px solid rgba(0, 240, 255, 0.6);
+  color: var(--lcd-cyan);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+}
+
+.hud-pause-btn.state-running:hover {
+  background: rgba(0, 240, 255, 0.25);
+  border-color: var(--lcd-cyan);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+/* État : Simulation en Pause (bouton Continuer clignotant / lumineux) */
+.hud-pause-btn.state-paused {
+  background: rgba(30, 85, 45, 0.95);
+  border: 2px solid var(--lcd-green);
+  color: #fff;
+  box-shadow: 0 0 16px var(--lcd-green);
+  animation: pulsePauseBtn 1s infinite alternate ease-in-out;
+}
+
+.hud-pause-btn.state-paused:hover {
+  background: var(--lcd-green);
+  color: #0b100e;
+  box-shadow: 0 0 22px var(--lcd-green);
+}
+
+/* État : Audio Muet */
+#btn-audio-header.audio-muted {
+  background: rgba(45, 18, 24, 0.85);
+  border-color: rgba(255, 51, 102, 0.7);
+  color: var(--lcd-red);
+  box-shadow: 0 0 8px rgba(255, 51, 102, 0.3);
+  animation: none;
+}
+
+#btn-audio-header.audio-muted:hover {
+  background: rgba(255, 51, 102, 0.25);
+  border-color: var(--lcd-red);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(255, 51, 102, 0.6);
+}
+
+@keyframes pulsePauseBtn {
+  0% { transform: scale(0.98); box-shadow: 0 0 10px var(--lcd-green); }
+  100% { transform: scale(1.05); box-shadow: 0 0 20px var(--lcd-green), 0 0 10px #ffe600; }
+}
+
+.pause-btn-icon {
+  font-size: 10px;
+}
+
+.pause-btn-text {
+  font-size: 10px;
+}
+
+/* ── Bloc Pause / Continuer Principal Sidebar ── */
+.pause-section {
+  background: rgba(12, 28, 20, 0.8) !important;
+  border: 1.5px solid rgba(0, 240, 255, 0.35) !important;
+  padding: 6px !important;
+}
+
+.sidebar-pause-btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.sidebar-pause-btn.state-running {
+  background: rgba(8, 24, 18, 0.9);
+  border: 1.5px solid rgba(0, 240, 255, 0.5);
+  color: var(--lcd-cyan);
+}
+
+.sidebar-pause-btn.state-running:hover {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: var(--lcd-cyan);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+}
+
+.sidebar-pause-btn.state-paused {
+  background: rgba(22, 70, 36, 0.95);
+  border: 2px solid var(--lcd-green);
+  color: #fff;
+  box-shadow: 0 0 16px var(--lcd-green);
+  animation: pulseSidebarPause 1s infinite alternate ease-in-out;
+}
+
+.sidebar-pause-btn.state-paused:hover {
+  background: var(--lcd-green);
+  color: #0b100e;
+  box-shadow: 0 0 22px var(--lcd-green);
+}
+
+@keyframes pulseSidebarPause {
+  0% { transform: scale(0.99); }
+  100% { transform: scale(1.02); box-shadow: 0 0 18px var(--lcd-green); }
+}
+
+.sidebar-pause-icon {
+  font-size: 15px;
+}
+
+.sidebar-pause-label {
+  font-family: var(--font-arcade);
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  font-weight: bold;
+}
+
+.sidebar-pause-sub {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  opacity: 0.85;
+  letter-spacing: 0.5px;
+}
+
+/* Telemetry Badge & Battery */
+.telemetry-badge {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--lcd-green);
+}
+
+.tele-item .val {
+  color: #fff;
+  font-weight: bold;
+}
+
+.battery-icon {
+  width: 26px;
+  height: 13px;
+  border: 1.5px solid var(--lcd-green);
+  border-radius: 2px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 1px;
+  gap: 1.5px;
+}
+
+.battery-icon::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 3px;
+  width: 2px;
+  height: 5px;
+  background: var(--lcd-green);
+  border-radius: 0 1px 1px 0;
+}
+
+.battery-bar {
+  flex: 1;
+  height: 100%;
+  background: var(--lcd-green);
+  box-shadow: 0 0 4px var(--lcd-green);
+}
+
+/* ── 4. Panneau Latéral Cyber Dashboard ──────────────────── */
+#cyber-sidebar {
+  position: absolute;
+  top: 56px;
+  right: 16px;
+  width: 280px;
+  max-height: calc(100vh - 110px);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 15px rgba(57, 255, 20, 0.12);
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  pointer-events: auto;
+}
+
+#cyber-sidebar.collapsed {
+  transform: translateX(calc(100% + 24px));
+}
+
+.sidebar-toggle {
+  position: absolute;
+  left: -28px;
+  top: 14px;
+  width: 26px;
+  height: 36px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-right: none;
+  border-radius: 5px 0 0 5px;
+  color: var(--lcd-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.5);
+  transition: background 0.2s, color 0.2s;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(57, 255, 20, 0.15);
+  color: #fff;
+}
+
+.sidebar-header {
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid rgba(57, 255, 20, 0.18);
+}
+
+.sidebar-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--lcd-green);
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+}
+
+.sidebar-subtitle {
+  font-size: 9.5px;
+  color: var(--lcd-dim);
+  margin-top: 2px;
+}
+
+.sidebar-scroll {
+  padding: 12px 14px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Scrollbar personnalisée LCD */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(57, 255, 20, 0.3);
+  border-radius: 2px;
+}
+
+/* Groupes de contrôles */
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(6, 14, 10, 0.6);
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(180, 220, 200, 0.12);
+}
+
+.section-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 4px;
+}
+
+.tag {
+  font-size: 8.5px;
+  padding: 1.5px 5px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.tag-cyan  { background: rgba(0, 240, 255, 0.18); color: var(--lcd-cyan); border: 1px solid var(--lcd-cyan); }
+.tag-green { background: rgba(57, 255, 20, 0.18);  color: var(--lcd-green); border: 1px solid var(--lcd-green); }
+.tag-red   { background: rgba(255, 51, 102, 0.18); color: var(--lcd-red); border: 1px solid var(--lcd-red); }
+.tag-amber { background: rgba(255, 183, 3, 0.18);  color: var(--lcd-amber); border: 1px solid var(--lcd-amber); }
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slider-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--lcd-dim);
+}
+
+.slider-val {
+  color: var(--lcd-green);
+  font-weight: bold;
+}
+
+/* Sliders néon personnalisés */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(30, 50, 40, 0.8);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--lcd-green);
+  border: 1.5px solid #000;
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--lcd-green);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+}
+
+/* Quick Spawns & Levels */
+.quick-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.level-btn {
+  background: rgba(18, 30, 24, 0.7);
+  border: 1px solid rgba(180, 220, 200, 0.2);
+  border-radius: 3px;
+  color: var(--lcd-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 5px 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.level-btn:hover {
+  background: rgba(57, 255, 20, 0.15);
+  color: #fff;
+  border-color: var(--lcd-green);
+}
+
+.level-btn.active {
+  background: rgba(57, 255, 20, 0.25);
+  color: var(--lcd-green);
+  border-color: var(--lcd-green);
+  font-weight: bold;
+  box-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+}
+
+.emp-trigger-btn {
+  background: rgba(255, 51, 102, 0.2);
+  border: 1px solid var(--lcd-red);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: bold;
+  padding: 8px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(255, 51, 102, 0.25);
+  transition: all 0.2s;
+}
+
+.emp-trigger-btn:hover {
+  background: var(--lcd-red);
+  color: #000;
+  box-shadow: 0 0 14px var(--lcd-red);
+}
+
+/* Ordres Essaim Allié */
+.swarm-order-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.order-btn {
+  background: rgba(10, 24, 20, 0.8);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: var(--lcd-white);
+  padding: 7px 4px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: bold;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.order-btn:hover {
+  border-color: var(--lcd-cyan);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+
+.order-btn.active#btn-swarm-formation {
+  background: rgba(0, 240, 255, 0.22);
+  border-color: var(--lcd-cyan);
+  color: var(--lcd-cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.order-btn.active#btn-swarm-attack {
+  background: rgba(255, 0, 127, 0.25);
+  border-color: var(--lcd-pink);
+  color: var(--lcd-yellow);
+  box-shadow: 0 0 12px rgba(255, 0, 127, 0.6);
+}
+
+.pill-swarm-order {
+  border-color: rgba(0, 240, 255, 0.35);
+}
+
+.quick-spawns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.spawn-btn {
+  background: rgba(18, 32, 26, 0.8);
+  border: 1px solid rgba(180, 220, 200, 0.25);
+  border-radius: 3px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  padding: 6px 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.spawn-btn:hover {
+  background: rgba(57, 255, 20, 0.2);
+  border-color: var(--lcd-green);
+  color: var(--lcd-green);
+  box-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+}
+
+.btn-spawn-obs {
+  grid-column: span 2;
+  border-color: rgba(255, 183, 3, 0.35);
+  color: var(--lcd-amber);
+}
+
+.btn-spawn-obs:hover {
+  background: rgba(255, 183, 3, 0.2);
+  border-color: var(--lcd-amber);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(255, 183, 3, 0.4);
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  padding: 10px 14px;
+  border-top: 1px solid rgba(57, 255, 20, 0.18);
+  display: flex;
+  gap: 8px;
+}
+
+.cyber-btn {
+  flex: 1;
+  background: rgba(14, 28, 22, 0.85);
+  border: 1px solid rgba(57, 255, 20, 0.35);
+  border-radius: 4px;
+  color: var(--lcd-green);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 6px 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cyber-btn span {
+  opacity: 0.7;
+  margin-right: 2px;
+}
+
+.cyber-btn:hover, .cyber-btn.active {
+  background: var(--lcd-green);
+  color: #000;
+  box-shadow: 0 0 12px var(--lcd-green);
+}
+
+/* ── 5. Footer Hint (Raccourcis en bas d'écran) ───────────── */
+#cyber-footer-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30px;
+  background: linear-gradient(0deg, rgba(8, 14, 11, 0.95) 0%, rgba(8, 14, 11, 0.4) 80%, transparent 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 10;
+  pointer-events: none;
+  font-size: 10px;
+  color: var(--lcd-dim);
+}
+
+#cyber-footer-hint kbd {
+  background: rgba(30, 48, 38, 0.85);
+  border: 1px solid rgba(180, 220, 200, 0.35);
+  border-radius: 2px;
+  padding: 1px 4px;
+  color: var(--lcd-green);
+  font-size: 9.5px;
+  font-family: var(--font-mono);
+  margin-right: 4px;
+}
+
+@media (max-width: 768px) {
+  #cyber-footer-hint {
+    display: none;
+  }
+  .faction-hud {
+    display: none;
+  }
+}
